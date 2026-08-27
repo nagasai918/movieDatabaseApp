@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import {useEffect, useState} from 'react'
 import {
   BrowserRouter,
   Switch,
@@ -10,7 +10,6 @@ import {
 import './App.css'
 
 const API_KEY = 'a30116b45fdadceac6af62622e247a83'
-
 const IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
 
 const getMovies = async url => {
@@ -52,7 +51,7 @@ const Pagination = ({page, totalPages, onPageChange}) => (
       disabled={page === 1}
       onClick={() => onPageChange(page - 1)}
     >
-      Previous
+      Prev
     </button>
 
     <span>Page {page}</span>
