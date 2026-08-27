@@ -46,23 +46,23 @@ const MoviesGrid = ({movies}) => (
   </div>
 )
 
-const Pagination = ({page, totalPages, onPageChange}) => (
+const Pagination = ({page, onPageChange}) => (
   <div className="pagination">
     <button
       type="button"
       disabled={page === 1}
-      onClick={() => onPageChange(page - 1)}
+      onClick={() => {
+        if (page > 1) {
+          onPageChange(page - 1)
+        }
+      }}
     >
       Prev
     </button>
 
     <p>{page}</p>
 
-    <button
-      type="button"
-      disabled={page >= totalPages}
-      onClick={() => onPageChange(page + 1)}
-    >
+    <button type="button" onClick={() => onPageChange(page + 1)}>
       Next
     </button>
   </div>
@@ -91,17 +91,11 @@ const Navbar = () => {
       </h1>
 
       <div className="nav-links">
-        <h2>
-          <Link to="/">Popular</Link>
-        </h2>
+        <Link to="/">Popular</Link>
 
-        <h2>
-          <Link to="/top-rated">Top Rated</Link>
-        </h2>
+        <Link to="/top-rated">Top Rated</Link>
 
-        <h2>
-          <Link to="/upcoming">Upcoming</Link>
-        </h2>
+        <Link to="/upcoming">Upcoming</Link>
       </div>
 
       <form className="search-form" onSubmit={onSearch}>
@@ -121,7 +115,6 @@ const Navbar = () => {
 const MoviesPage = ({type, title}) => {
   const [movies, setMovies] = useState([])
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -141,7 +134,6 @@ const MoviesPage = ({type, title}) => {
       const data = await getMovies(url)
 
       setMovies(data.results || [])
-      setTotalPages(data.total_pages || 1)
       setLoading(false)
 
       window.scrollTo(0, 0)
@@ -149,10 +141,6 @@ const MoviesPage = ({type, title}) => {
 
     fetchMovies()
   }, [type, page])
-
-  const changePage = newPage => {
-    setPage(newPage)
-  }
 
   return (
     <div className="page-container">
@@ -164,11 +152,7 @@ const MoviesPage = ({type, title}) => {
         <>
           <MoviesGrid movies={movies} />
 
-          <Pagination
-            page={page}
-            totalPages={Math.min(totalPages, 500)}
-            onPageChange={changePage}
-          />
+          <Pagination page={page} onPageChange={setPage} />
         </>
       )}
     </div>
@@ -180,7 +164,6 @@ const SearchPage = () => {
 
   const [movies, setMovies] = useState([])
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -194,7 +177,6 @@ const SearchPage = () => {
       const data = await getMovies(url)
 
       setMovies(data.results || [])
-      setTotalPages(data.total_pages || 1)
       setLoading(false)
 
       window.scrollTo(0, 0)
@@ -213,11 +195,7 @@ const SearchPage = () => {
         <>
           <MoviesGrid movies={movies} />
 
-          <Pagination
-            page={page}
-            totalPages={Math.min(totalPages, 500)}
-            onPageChange={setPage}
-          />
+          <Pagination page={page} onPageChange={setPage} />
         </>
       )}
     </div>
