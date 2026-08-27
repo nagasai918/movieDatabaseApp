@@ -10,6 +10,7 @@ import {
 import './App.css'
 
 const API_KEY = 'a30116b45fdadceac6af62622e247a83'
+
 const IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
 
 const getMovies = async url => {
@@ -87,11 +88,17 @@ const Navbar = () => {
       </h1>
 
       <div className="nav-links">
-        <Link to="/">Home</Link>
+        <h2>
+          <Link to="/">Popular</Link>
+        </h2>
 
-        <Link to="/top-rated">Top Rated</Link>
+        <h2>
+          <Link to="/top-rated">Top Rated</Link>
+        </h2>
 
-        <Link to="/upcoming">Upcoming</Link>
+        <h2>
+          <Link to="/upcoming">Upcoming</Link>
+        </h2>
       </div>
 
       <form className="search-form" onSubmit={onSearch}>
