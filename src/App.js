@@ -26,13 +26,15 @@ const MovieCard = ({movie}) => (
       className="movie-image"
     />
 
-    <h3>{movie.title}</h3>
+    <div className="movie-info">
+      <h3>{movie.title}</h3>
 
-    <p>Rating: {movie.vote_average}</p>
+      <p>Rating: {movie.vote_average}</p>
 
-    <Link to={`/movie/${movie.id}`}>
-      <button type="button">View Details</button>
-    </Link>
+      <Link to={`/movie/${movie.id}`}>
+        <button type="button">View Details</button>
+      </Link>
+    </div>
   </div>
 )
 
@@ -54,7 +56,7 @@ const Pagination = ({page, totalPages, onPageChange}) => (
       Prev
     </button>
 
-    <span>Page {page}</span>
+    <p>{page}</p>
 
     <button
       type="button"
@@ -104,7 +106,7 @@ const Navbar = () => {
 
       <form className="search-form" onSubmit={onSearch}>
         <input
-          type="search"
+          type="text"
           placeholder="Search"
           value={searchText}
           onChange={event => setSearchText(event.target.value)}
@@ -130,13 +132,9 @@ const MoviesPage = ({type, title}) => {
 
       if (type === 'popular') {
         url = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=${page}`
-      }
-
-      if (type === 'top-rated') {
+      } else if (type === 'top-rated') {
         url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
-      }
-
-      if (type === 'upcoming') {
+      } else if (type === 'upcoming') {
         url = `https://api.themoviedb.org/3/movie/upcoming?api_key=${API_KEY}&language=en-US&page=${page}`
       }
 
@@ -321,15 +319,15 @@ const App = () => (
 
     <Switch>
       <Route exact path="/">
-        <MoviesPage type="popular" title="Popular Movies" />
+        <MoviesPage type="popular" title="Popular" />
       </Route>
 
       <Route exact path="/top-rated">
-        <MoviesPage type="top-rated" title="Top Rated Movies" />
+        <MoviesPage type="top-rated" title="Top Rated" />
       </Route>
 
       <Route exact path="/upcoming">
-        <MoviesPage type="upcoming" title="Upcoming Movies" />
+        <MoviesPage type="upcoming" title="Upcoming" />
       </Route>
 
       <Route exact path="/search/:query">
