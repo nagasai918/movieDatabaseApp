@@ -51,11 +51,7 @@ const Pagination = ({page, onPageChange}) => (
     <button
       type="button"
       disabled={page === 1}
-      onClick={() => {
-        if (page > 1) {
-          onPageChange(page - 1)
-        }
-      }}
+      onClick={() => onPageChange(page - 1)}
     >
       Prev
     </button>
@@ -91,7 +87,7 @@ const Navbar = () => {
       </h1>
 
       <div className="nav-links">
-        <Link to="/">Popular</Link>
+        <Link to="/">Home</Link>
 
         <Link to="/top-rated">Top Rated</Link>
 
@@ -142,6 +138,12 @@ const MoviesPage = ({type, title}) => {
     fetchMovies()
   }, [type, page])
 
+  const changePage = newPage => {
+    if (newPage >= 1) {
+      setPage(newPage)
+    }
+  }
+
   return (
     <div className="page-container">
       <h1>{title}</h1>
@@ -152,7 +154,7 @@ const MoviesPage = ({type, title}) => {
         <>
           <MoviesGrid movies={movies} />
 
-          <Pagination page={page} onPageChange={setPage} />
+          <Pagination page={page} onPageChange={changePage} />
         </>
       )}
     </div>
