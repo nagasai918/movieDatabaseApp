@@ -1,5 +1,12 @@
 import React, {useEffect, useState} from 'react'
-import {BrowserRouter, Switch, Route, Link, useHistory, useParams} from 'react-router-dom'
+import {
+  BrowserRouter,
+  Switch,
+  Route,
+  Link,
+  useHistory,
+  useParams,
+} from 'react-router-dom'
 import './App.css'
 
 const API_KEY = 'a30116b45fdadceac6af62622e247a83'
