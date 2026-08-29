@@ -12,39 +12,52 @@ import './App.css'
 
 const API_KEY = '2928dc0b8f5060e3654c7e5538ebd78c'
 const IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
+const NO_IMAGE = 'https://via.placeholder.com/500x750?text=No+Image'
 
 const getMovies = async url => {
   const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch data')
+  }
+
   return response.json()
 }
 
-const MovieCard = ({movie}) => (
-  <div className="movie-card">
-    <img
-      src={`${IMAGE_URL}${movie.poster_path}`}
-      alt={movie.title}
-      className="movie-image"
-    />
+const MovieCard = ({movie}) => {
+  const image = movie.poster_path
+    ? `${IMAGE_URL}${movie.poster_path}`
+    : NO_IMAGE
 
-    <div className="movie-info">
-      <h3>{movie.title}</h3>
+  return (
+    <div className="movie-card">
+      <img src={image} alt={movie.title} className="movie-image" />
 
-      <p>Rating: {movie.vote_average}</p>
+      <div className="movie-info">
+        <h3>{movie.title}</h3>
+        <p>Rating: {movie.vote_average}</p>
 
-      <Link to={`/movie/${movie.id}`}>
-        <button type="button">View Details</button>
-      </Link>
+        <Link to={`/movie/${movie.id}`}>
+          <button type="button">View Details</button>
+        </Link>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
-const MoviesGrid = ({movies}) => (
-  <div className="movies-grid">
-    {movies.map(movie => (
-      <MovieCard movie={movie} key={movie.id} />
-    ))}
-  </div>
-)
+const MoviesGrid = ({movies}) => {
+  if (movies.length === 0) {
+    return <p className="message">No movies found.</p>
+  }
+
+  return (
+    <div className="movies-grid">
+      {movies.map(movie => (
+        <MovieCard movie={movie} key={movie.id} />
+      ))}
+    </div>
+  )
+}
 
 const Pagination = ({page, onPageChange}) => (
   <div className="pagination">
@@ -94,7 +107,7 @@ const Navbar = () => {
 
       <form className="search-form" onSubmit={onSearch}>
         <input
-          type="text"
+          type="search"
           placeholder="Search"
           value={searchText}
           onChange={event => setSearchText(event.target.value)}
@@ -113,6 +126,10 @@ const MoviesPage = ({type, title}) => {
   const [error, setError] = useState(false)
 
   useEffect(() => {
+    setPage(1)
+  }, [type])
+
+  useEffect(() => {
     const fetchMovies = async () => {
       setLoading(true)
       setError(false)
@@ -123,20 +140,17 @@ const MoviesPage = ({type, title}) => {
         url = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=${page}`
       } else if (type === 'top-rated') {
         url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
-      } else {
+      } else if (type === 'upcoming') {
         url = `https://api.themoviedb.org/3/movie/upcoming?api_key=${API_KEY}&language=en-US&page=${page}`
       }
 
       try {
         const data = await getMovies(url)
 
-        if (data.results) {
-          setMovies(data.results)
-        } else {
-          setMovies([])
-        }
-      } catch (e) {
+        setMovies(data.results || [])
+      } catch (err) {
         setError(true)
+        setMovies([])
       } finally {
         setLoading(false)
         window.scrollTo(0, 0)
@@ -146,13 +160,9 @@ const MoviesPage = ({type, title}) => {
     fetchMovies()
   }, [type, page])
 
-  const changePage = newPage => {
-    setPage(newPage)
-  }
-
   return (
     <div className="page-container">
-      <h2>{title}</h2>
+      <h1>{title}</h1>
 
       {loading && <p className="message">Loading...</p>}
 
@@ -164,7 +174,9 @@ const MoviesPage = ({type, title}) => {
         <>
           <MoviesGrid movies={movies} />
 
-          <Pagination page={page} onPageChange={changePage} />
+          {movies.length > 0 && (
+            <Pagination page={page} onPageChange={setPage} />
+          )}
         </>
       )}
     </div>
@@ -191,8 +203,9 @@ const SearchPage = () => {
         const data = await getMovies(url)
 
         setMovies(data.results || [])
-      } catch (e) {
+      } catch (err) {
         setError(true)
+        setMovies([])
       } finally {
         setLoading(false)
       }
@@ -203,7 +216,7 @@ const SearchPage = () => {
 
   return (
     <div className="page-container">
-      <h2>Search Results</h2>
+      <h1>Search Results</h1>
 
       {loading && <p className="message">Loading...</p>}
 
@@ -241,7 +254,7 @@ const MovieDetails = () => {
 
         setMovie(movieData)
         setCast(castData.cast || [])
-      } catch (e) {
+      } catch (err) {
         setError(true)
       } finally {
         setLoading(false)
@@ -262,11 +275,12 @@ const MovieDetails = () => {
 
   const image = movie.poster_path
     ? `${IMAGE_URL}${movie.poster_path}`
-    : 'https://via.placeholder.com/500x750?text=No+Image'
+    : NO_IMAGE
 
-  const genres = movie.genres
-    ? movie.genres.map(genre => genre.name).join(', ')
-    : 'N/A'
+  const genres =
+    movie.genres && movie.genres.length > 0
+      ? movie.genres.map(genre => genre.name).join(', ')
+      : 'N/A'
 
   return (
     <div className="details-page">
@@ -282,11 +296,11 @@ const MovieDetails = () => {
 
           <p>Genre: {genres}</p>
 
-          <p>Release Date: {movie.release_date}</p>
+          <p>Release Date: {movie.release_date || 'N/A'}</p>
 
           <h2>Overview</h2>
 
-          <p>{movie.overview}</p>
+          <p>{movie.overview || 'No overview available.'}</p>
         </div>
       </div>
 
@@ -294,22 +308,21 @@ const MovieDetails = () => {
         <h2>Cast</h2>
 
         <div className="cast-grid">
-          {cast.slice(0, 20).map(actor => (
-            <div className="cast-card" key={actor.credit_id}>
-              <img
-                src={
-                  actor.profile_path
-                    ? `${IMAGE_URL}${actor.profile_path}`
-                    : 'https://via.placeholder.com/500x750?text=No+Image'
-                }
-                alt={actor.original_name}
-              />
+          {cast.slice(0, 20).map(actor => {
+            const castImage = actor.profile_path
+              ? `${IMAGE_URL}${actor.profile_path}`
+              : NO_IMAGE
 
-              <h3>{actor.original_name}</h3>
+            return (
+              <div className="cast-card" key={actor.credit_id}>
+                <img src={castImage} alt={actor.original_name} />
 
-              <p>{actor.character}</p>
-            </div>
-          ))}
+                <h3>{actor.original_name}</h3>
+
+                <p>{actor.character}</p>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
