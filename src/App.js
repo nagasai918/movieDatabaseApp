@@ -12,55 +12,41 @@ import './App.css'
 
 const API_KEY = '2928dc0b8f5060e3654c7e5538ebd78c'
 const IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
-const NO_IMAGE = 'https://via.placeholder.com/500x750?text=No+Image'
 
 const getMovies = async url => {
   const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch data')
-  }
-
   return response.json()
 }
 
-const MovieCard = ({movie}) => {
-  const image = movie.poster_path
-    ? `${IMAGE_URL}${movie.poster_path}`
-    : NO_IMAGE
+const MovieCard = ({movie}) => (
+  <div className="movie-card">
+    <img
+      src={`${IMAGE_URL}${movie.poster_path}`}
+      alt={movie.title}
+      className="movie-image"
+    />
 
-  return (
-    <div className="movie-card">
-      <img src={image} alt={movie.title} className="movie-image" />
+    <div className="movie-info">
+      <h3>{movie.title}</h3>
 
-      <div className="movie-info">
-        <h3>{movie.title}</h3>
+      <p>Rating: {movie.vote_average}</p>
 
-        <p>Rating: {movie.vote_average}</p>
-
-        <Link to={`/movie/${movie.id}`}>
-          <button type="button">View Details</button>
-        </Link>
-      </div>
+      <Link to={`/movie/${movie.id}`}>
+        <button type="button">View Details</button>
+      </Link>
     </div>
-  )
-}
+  </div>
+)
 
-const MoviesGrid = ({movies}) => {
-  if (movies.length === 0) {
-    return <p className="message">No movies found.</p>
-  }
+const MoviesGrid = ({movies}) => (
+  <div className="movies-grid">
+    {movies.map(movie => (
+      <MovieCard movie={movie} key={movie.id} />
+    ))}
+  </div>
+)
 
-  return (
-    <div className="movies-grid">
-      {movies.map(movie => (
-        <MovieCard movie={movie} key={movie.id} />
-      ))}
-    </div>
-  )
-}
-
-const Pagination = ({page, totalPages, onPageChange}) => (
+const Pagination = ({page, onPageChange}) => (
   <div className="pagination">
     <button
       type="button"
@@ -72,11 +58,7 @@ const Pagination = ({page, totalPages, onPageChange}) => (
 
     <span>{page}</span>
 
-    <button
-      type="button"
-      disabled={page >= totalPages}
-      onClick={() => onPageChange(page + 1)}
-    >
+    <button type="button" onClick={() => onPageChange(page + 1)}>
       Next
     </button>
   </div>
@@ -89,10 +71,10 @@ const Navbar = () => {
   const onSearch = event => {
     event.preventDefault()
 
-    const searchValue = searchText.trim()
+    const value = searchText.trim()
 
-    if (searchValue) {
-      history.push(`/search/${encodeURIComponent(searchValue)}`)
+    if (value !== '') {
+      history.push(`/search/${encodeURIComponent(value)}`)
     }
   }
 
@@ -112,7 +94,7 @@ const Navbar = () => {
 
       <form className="search-form" onSubmit={onSearch}>
         <input
-          type="search"
+          type="text"
           placeholder="Search"
           value={searchText}
           onChange={event => setSearchText(event.target.value)}
@@ -127,7 +109,6 @@ const Navbar = () => {
 const MoviesPage = ({type, title}) => {
   const [movies, setMovies] = useState([])
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -142,18 +123,20 @@ const MoviesPage = ({type, title}) => {
         url = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=${page}`
       } else if (type === 'top-rated') {
         url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
-      } else if (type === 'upcoming') {
+      } else {
         url = `https://api.themoviedb.org/3/movie/upcoming?api_key=${API_KEY}&language=en-US&page=${page}`
       }
 
       try {
         const data = await getMovies(url)
 
-        setMovies(data.results || [])
-        setTotalPages(Math.min(data.total_pages || 1, 500))
-      } catch (err) {
+        if (data.results) {
+          setMovies(data.results)
+        } else {
+          setMovies([])
+        }
+      } catch (e) {
         setError(true)
-        setMovies([])
       } finally {
         setLoading(false)
         window.scrollTo(0, 0)
@@ -163,9 +146,13 @@ const MoviesPage = ({type, title}) => {
     fetchMovies()
   }, [type, page])
 
+  const changePage = newPage => {
+    setPage(newPage)
+  }
+
   return (
     <div className="page-container">
-      <h1>{title}</h1>
+      <h2>{title}</h2>
 
       {loading && <p className="message">Loading...</p>}
 
@@ -177,13 +164,7 @@ const MoviesPage = ({type, title}) => {
         <>
           <MoviesGrid movies={movies} />
 
-          {movies.length > 0 && (
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          )}
+          <Pagination page={page} onPageChange={changePage} />
         </>
       )}
     </div>
@@ -194,44 +175,35 @@ const SearchPage = () => {
   const {query} = useParams()
 
   const [movies, setMovies] = useState([])
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    setPage(1)
-  }, [query])
-
-  useEffect(() => {
-    const fetchSearchResults = async () => {
+    const fetchSearchMovies = async () => {
       setLoading(true)
       setError(false)
 
       const url = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(
         query,
-      )}&page=${page}`
+      )}&page=1`
 
       try {
         const data = await getMovies(url)
 
         setMovies(data.results || [])
-        setTotalPages(Math.min(data.total_pages || 1, 500))
-      } catch (err) {
+      } catch (e) {
         setError(true)
-        setMovies([])
       } finally {
         setLoading(false)
-        window.scrollTo(0, 0)
       }
     }
 
-    fetchSearchResults()
-  }, [query, page])
+    fetchSearchMovies()
+  }, [query])
 
   return (
     <div className="page-container">
-      <h1>Search Results</h1>
+      <h2>Search Results</h2>
 
       {loading && <p className="message">Loading...</p>}
 
@@ -239,19 +211,7 @@ const SearchPage = () => {
         <p className="message">Something went wrong. Please try again.</p>
       )}
 
-      {!loading && !error && (
-        <>
-          <MoviesGrid movies={movies} />
-
-          {movies.length > 0 && (
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          )}
-        </>
-      )}
+      {!loading && !error && <MoviesGrid movies={movies} />}
     </div>
   )
 }
@@ -265,7 +225,7 @@ const MovieDetails = () => {
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    const fetchMovieDetails = async () => {
+    const fetchDetails = async () => {
       setLoading(true)
       setError(false)
 
@@ -281,7 +241,7 @@ const MovieDetails = () => {
 
         setMovie(movieData)
         setCast(castData.cast || [])
-      } catch (err) {
+      } catch (e) {
         setError(true)
       } finally {
         setLoading(false)
@@ -289,7 +249,7 @@ const MovieDetails = () => {
       }
     }
 
-    fetchMovieDetails()
+    fetchDetails()
   }, [id])
 
   if (loading) {
@@ -302,12 +262,11 @@ const MovieDetails = () => {
 
   const image = movie.poster_path
     ? `${IMAGE_URL}${movie.poster_path}`
-    : NO_IMAGE
+    : 'https://via.placeholder.com/500x750?text=No+Image'
 
-  const genres =
-    movie.genres && movie.genres.length > 0
-      ? movie.genres.map(genre => genre.name).join(', ')
-      : 'N/A'
+  const genres = movie.genres
+    ? movie.genres.map(genre => genre.name).join(', ')
+    : 'N/A'
 
   return (
     <div className="details-page">
@@ -323,11 +282,11 @@ const MovieDetails = () => {
 
           <p>Genre: {genres}</p>
 
-          <p>Release Date: {movie.release_date || 'N/A'}</p>
+          <p>Release Date: {movie.release_date}</p>
 
           <h2>Overview</h2>
 
-          <p>{movie.overview || 'No overview available.'}</p>
+          <p>{movie.overview}</p>
         </div>
       </div>
 
@@ -335,21 +294,22 @@ const MovieDetails = () => {
         <h2>Cast</h2>
 
         <div className="cast-grid">
-          {cast.slice(0, 20).map(actor => {
-            const castImage = actor.profile_path
-              ? `${IMAGE_URL}${actor.profile_path}`
-              : NO_IMAGE
+          {cast.slice(0, 20).map(actor => (
+            <div className="cast-card" key={actor.credit_id}>
+              <img
+                src={
+                  actor.profile_path
+                    ? `${IMAGE_URL}${actor.profile_path}`
+                    : 'https://via.placeholder.com/500x750?text=No+Image'
+                }
+                alt={actor.original_name}
+              />
 
-            return (
-              <div className="cast-card" key={actor.credit_id}>
-                <img src={castImage} alt={actor.original_name} />
+              <h3>{actor.original_name}</h3>
 
-                <h3>{actor.original_name}</h3>
-
-                <p>{actor.character}</p>
-              </div>
-            )
-          })}
+              <p>{actor.character}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -362,15 +322,15 @@ const App = () => (
 
     <Switch>
       <Route exact path="/">
-        <MoviesPage type="popular" title="Popular Movies" />
+        <MoviesPage type="popular" title="Popular" />
       </Route>
 
       <Route exact path="/top-rated">
-        <MoviesPage type="top-rated" title="Top Rated Movies" />
+        <MoviesPage type="top-rated" title="Top Rated" />
       </Route>
 
       <Route exact path="/upcoming">
-        <MoviesPage type="upcoming" title="Upcoming Movies" />
+        <MoviesPage type="upcoming" title="Upcoming" />
       </Route>
 
       <Route exact path="/search/:query">
