@@ -35,6 +35,7 @@ const MovieCard = ({movie}) => {
 
       <div className="movie-info">
         <h3>{movie.title}</h3>
+
         <p>Rating: {movie.vote_average}</p>
 
         <Link to={`/movie/${movie.id}`}>
@@ -84,10 +85,10 @@ const Navbar = () => {
   const onSearch = event => {
     event.preventDefault()
 
-    const value = searchText.trim()
+    const searchValue = searchText.trim()
 
-    if (value !== '') {
-      history.push(`/search/${encodeURIComponent(value)}`)
+    if (searchValue !== '') {
+      history.push(`/search/${encodeURIComponent(searchValue)}`)
     }
   }
 
@@ -146,7 +147,6 @@ const MoviesPage = ({type, title}) => {
 
       try {
         const data = await getMovies(url)
-
         setMovies(data.results || [])
       } catch (err) {
         setError(true)
@@ -201,13 +201,13 @@ const SearchPage = () => {
 
       try {
         const data = await getMovies(url)
-
         setMovies(data.results || [])
       } catch (err) {
         setError(true)
         setMovies([])
       } finally {
         setLoading(false)
+        window.scrollTo(0, 0)
       }
     }
 
