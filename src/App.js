@@ -100,14 +100,18 @@ const Navbar = () => {
       </h1>
 
       <div className="nav-links">
-        <Link to="/">Popular</Link>
+        <Link to="/" aria-label="Home">
+          Home
+        </Link>
+
         <Link to="/top-rated">Top Rated</Link>
+
         <Link to="/upcoming">Upcoming</Link>
       </div>
 
       <form className="search-form" onSubmit={onSearch}>
         <input
-          type="search"
+          type="text"
           placeholder="Search"
           value={searchText}
           onChange={event => setSearchText(event.target.value)}
@@ -124,10 +128,6 @@ const MoviesPage = ({type, title}) => {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-
-  useEffect(() => {
-    setPage(1)
-  }, [type])
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -157,6 +157,10 @@ const MoviesPage = ({type, title}) => {
 
     fetchMovies()
   }, [type, page])
+
+  useEffect(() => {
+    setPage(1)
+  }, [type])
 
   return (
     <div className="page-container">
@@ -244,7 +248,7 @@ const MovieDetails = () => {
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    const fetchMovieDetails = async () => {
+    const fetchDetails = async () => {
       setLoading(true)
       setError(false)
 
@@ -267,7 +271,7 @@ const MovieDetails = () => {
       }
     }
 
-    fetchMovieDetails()
+    fetchDetails()
   }, [id])
 
   if (loading) {
@@ -278,7 +282,7 @@ const MovieDetails = () => {
     return <p className="message">Something went wrong. Please try again.</p>
   }
 
-  const movieImage = movie.poster_path
+  const image = movie.poster_path
     ? `${IMAGE_URL}${movie.poster_path}`
     : NO_IMAGE
 
@@ -290,7 +294,7 @@ const MovieDetails = () => {
   return (
     <div className="details-page">
       <div className="movie-details">
-        <img src={movieImage} alt={movie.title} className="details-image" />
+        <img src={image} alt={movie.title} className="details-image" />
 
         <div className="details-content">
           <h1>{movie.title}</h1>
@@ -314,13 +318,13 @@ const MovieDetails = () => {
 
         <div className="cast-grid">
           {cast.slice(0, 20).map(actor => {
-            const actorImage = actor.profile_path
+            const castImage = actor.profile_path
               ? `${IMAGE_URL}${actor.profile_path}`
               : NO_IMAGE
 
             return (
               <div className="cast-card" key={actor.credit_id}>
-                <img src={actorImage} alt={actor.original_name} />
+                <img src={castImage} alt={actor.original_name} />
 
                 <h3>{actor.original_name}</h3>
 
