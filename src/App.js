@@ -16,12 +16,8 @@ const NO_IMAGE = 'https://via.placeholder.com/500x750?text=No+Image'
 
 const getMovies = async url => {
   const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch')
-  }
-
-  return response.json()
+  const data = await response.json()
+  return data
 }
 
 const MovieCard = ({movie}) => {
@@ -35,6 +31,7 @@ const MovieCard = ({movie}) => {
 
       <div className="movie-info">
         <h3>{movie.title}</h3>
+
         <p>Rating: {movie.vote_average}</p>
 
         <Link to={`/movie/${movie.id}`}>
@@ -69,7 +66,7 @@ const Pagination = ({page, onPageChange}) => (
       Prev
     </button>
 
-    <span>{page}</span>
+    <p>{page}</p>
 
     <button type="button" onClick={() => onPageChange(page + 1)}>
       Next
@@ -84,10 +81,10 @@ const Navbar = () => {
   const onSearch = event => {
     event.preventDefault()
 
-    const value = searchText.trim()
+    const searchValue = searchText.trim()
 
-    if (value !== '') {
-      history.push(`/search/${encodeURIComponent(value)}`)
+    if (searchValue !== '') {
+      history.push(`/search/${encodeURIComponent(searchValue)}`)
     }
   }
 
@@ -100,9 +97,7 @@ const Navbar = () => {
       </h1>
 
       <div className="nav-links">
-        <Link to="/" aria-label="Home">
-          Home
-        </Link>
+        <Link to="/">Popular</Link>
 
         <Link to="/top-rated">Top Rated</Link>
 
@@ -111,7 +106,7 @@ const Navbar = () => {
 
       <form className="search-form" onSubmit={onSearch}>
         <input
-          type="text"
+          type="search"
           placeholder="Search"
           value={searchText}
           onChange={event => setSearchText(event.target.value)}
@@ -127,12 +122,10 @@ const MoviesPage = ({type, title}) => {
   const [movies, setMovies] = useState([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
 
   useEffect(() => {
     const fetchMovies = async () => {
       setLoading(true)
-      setError(false)
 
       let url = ''
 
@@ -147,12 +140,11 @@ const MoviesPage = ({type, title}) => {
       try {
         const data = await getMovies(url)
         setMovies(data.results || [])
-      } catch (err) {
-        setError(true)
+      } catch (error) {
         setMovies([])
-      } finally {
-        setLoading(false)
       }
+
+      setLoading(false)
     }
 
     fetchMovies()
@@ -166,13 +158,9 @@ const MoviesPage = ({type, title}) => {
     <div className="page-container">
       <h1>{title}</h1>
 
-      {loading && <p className="message">Loading...</p>}
-
-      {error && (
-        <p className="message">Something went wrong. Please try again.</p>
-      )}
-
-      {!loading && !error && (
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
         <>
           <MoviesGrid movies={movies} />
 
@@ -189,16 +177,14 @@ const SearchPage = () => {
   const [movies, setMovies] = useState([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
 
   useEffect(() => {
     setPage(1)
   }, [query])
 
   useEffect(() => {
-    const fetchSearchMovies = async () => {
+    const fetchSearchResults = async () => {
       setLoading(true)
-      setError(false)
 
       const url = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(
         query,
@@ -207,28 +193,23 @@ const SearchPage = () => {
       try {
         const data = await getMovies(url)
         setMovies(data.results || [])
-      } catch (err) {
-        setError(true)
+      } catch (error) {
         setMovies([])
-      } finally {
-        setLoading(false)
       }
+
+      setLoading(false)
     }
 
-    fetchSearchMovies()
+    fetchSearchResults()
   }, [query, page])
 
   return (
     <div className="page-container">
       <h1>Search Results</h1>
 
-      {loading && <p className="message">Loading...</p>}
-
-      {error && (
-        <p className="message">Something went wrong. Please try again.</p>
-      )}
-
-      {!loading && !error && (
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
         <>
           <MoviesGrid movies={movies} />
 
@@ -245,41 +226,38 @@ const MovieDetails = () => {
   const [movie, setMovie] = useState(null)
   const [cast, setCast] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
 
   useEffect(() => {
-    const fetchDetails = async () => {
+    const fetchMovieDetails = async () => {
       setLoading(true)
-      setError(false)
 
       const movieUrl = `https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}&language=en-US`
 
       const castUrl = `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${API_KEY}&language=en-US`
 
       try {
-        const [movieData, castData] = await Promise.all([
-          getMovies(movieUrl),
-          getMovies(castUrl),
-        ])
+        const movieData = await getMovies(movieUrl)
+        const castData = await getMovies(castUrl)
 
         setMovie(movieData)
         setCast(castData.cast || [])
-      } catch (err) {
-        setError(true)
-      } finally {
-        setLoading(false)
+      } catch (error) {
+        setMovie(null)
+        setCast([])
       }
+
+      setLoading(false)
     }
 
-    fetchDetails()
+    fetchMovieDetails()
   }, [id])
 
   if (loading) {
-    return <p className="message">Loading...</p>
+    return <p>Loading...</p>
   }
 
-  if (error || !movie) {
-    return <p className="message">Something went wrong. Please try again.</p>
+  if (!movie) {
+    return <p>Something went wrong. Please try again.</p>
   }
 
   const image = movie.poster_path
@@ -301,15 +279,15 @@ const MovieDetails = () => {
 
           <p>Rating: {movie.vote_average}</p>
 
-          <p>Duration: {movie.runtime ? `${movie.runtime} minutes` : 'N/A'}</p>
+          <p>Duration: {movie.runtime} minutes</p>
 
           <p>Genre: {genres}</p>
 
-          <p>Release Date: {movie.release_date || 'N/A'}</p>
+          <p>Release Date: {movie.release_date}</p>
 
           <h2>Overview</h2>
 
-          <p>{movie.overview || 'No overview available.'}</p>
+          <p>{movie.overview}</p>
         </div>
       </div>
 
